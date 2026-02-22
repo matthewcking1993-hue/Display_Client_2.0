@@ -1,0 +1,69 @@
+{
+  "name": "kds-device-shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cross-platform KDS Device Shell built with Capacitor, React, and Electron",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite --host",
+    "dev:electron": "concurrently \"vite --host\" \"npm run electron:dev\"",
+    "electron:dev": "cross-env NODE_ENV=development electron electron/main.cjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "clean": "rimraf dist",
+    "sync": "npm run build && npx cap sync",
+    "sync:android": "npm run build && npx cap sync android",
+    "sync:ios": "npm run build && npx cap sync ios",
+    "sync:windows": "npm run build && npx cap sync electron",
+    "build:windows": "npm run sync:windows && npm run electron:bundle",
+    "electron:bundle": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.cjs",
+    "build:android": "npm run sync:android && node ./scripts/gradle-release.mjs",
+    "build:ios": "npm run sync:ios && cd ios/App && xcodebuild -scheme App -configuration Release -derivedDataPath build",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "capacitor",
+    "react",
+    "electron",
+    "kiosk"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/device": "^8.0.1",
+    "@capacitor/electron": "^2.5.0",
+    "@capacitor/ios": "^8.1.0",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/preferences": "^8.0.1",
+    "auto-launch": "^5.0.6",
+    "axios": "^1.13.5",
+    "dotenv": "^17.3.1",
+    "electron-store": "^11.0.2",
+    "mitt": "^3.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.1.0",
+    "@types/node": "^25.2.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
+    "rimraf": "^6.1.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}
