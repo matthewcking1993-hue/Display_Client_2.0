@@ -4,11 +4,21 @@ import { useDeviceStore } from '../state/deviceStore';
 import { useLogStore } from '../state/logStore';
 import { exportLogs, logInfo } from '../services/logService';
 import { writeStationAssignment } from '../services/secureStore';
+import { serverIdentity } from '../config';
 
 const formatTime = (iso?: string) => (iso ? new Date(iso).toLocaleString() : '—');
 
 export const AdminPanel = () => {
-  const { deviceId, metadata, stationAssignment, lastHeartbeatAt, lastRegistrationAt, setStation } =
+  const {
+    deviceId,
+    metadata,
+    stationAssignment,
+    lastHeartbeatAt,
+    lastRegistrationAt,
+    setStation,
+    location,
+    serverKey
+  } =
     useDeviceStore();
   const [pin, setPin] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
@@ -28,8 +38,9 @@ export const AdminPanel = () => {
       { label: 'Registered', value: formatTime(lastRegistrationAt) },
       { label: 'App', value: metadata?.appVersion ?? 'n/a' },
       { label: 'Platform', value: `${metadata?.platform ?? 'n/a'} ${metadata?.osVersion ?? ''}`.trim() }
+    ].concat(location ? [{ label: 'Kitchen', value: `${location.name} (${location.id})` }] : []);
     ],
-    [deviceId, stationAssignment, lastHeartbeatAt, lastRegistrationAt, metadata]
+    [deviceId, stationAssignment, lastHeartbeatAt, lastRegistrationAt, location, metadata]
   );
 
   const unlock = () => {
@@ -45,7 +56,7 @@ export const AdminPanel = () => {
 
   const handleStationSave = async () => {
     const sanitized = stationDraft.trim();
-    await writeStationAssignment(sanitized || null);
+    await writeStationAssignment(sanitized || null, serverKey ?? serverIdentity.key);
     setStation(sanitized || null);
     logInfo('Station updated', { value: sanitized || null });
   };

@@ -3,9 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { useDeviceStore } from '../state/deviceStore';
 import { collectDeviceMetadata } from '../services/deviceBridge';
 import { logError, logInfo } from '../services/logService';
-import { readDeviceId, writeDeviceId, readStationAssignment } from '../services/secureStore';
-import { registerDevice } from '../services/apiClient';
-import { appConfig } from '../config';
+import { readDeviceId, writeDeviceId, readServerBinding } from '../services/secureStore';
+import { getDeviceStatus, registerDevice } from '../services/apiClient';
+import { appConfig, serverIdentity } from '../config';
+import { applyDeviceStatusSnapshot } from '../services/assignmentCoordinator';
 
 export const useDeviceBootstrap = () => {
   const {
@@ -14,14 +15,21 @@ export const useDeviceBootstrap = () => {
     setMetadata,
     setStation,
     markRegistration,
+     setDisplayPath,
+     setServerKey,
     deviceId,
     metadata
   } = useDeviceStore();
 
-  const loadStation = useCallback(async () => {
-    const stored = await readStationAssignment();
-    if (stored) setStation(stored);
-  }, [setStation]);
+  const loadBinding = useCallback(async () => {
+    const binding = await readServerBinding(serverIdentity.key);
+    if (binding?.stationId) {
+      setStation(binding.stationId);
+    }
+    if (binding?.displayPath) {
+      setDisplayPath(binding.displayPath);
+    }
+  }, [setDisplayPath, setStation]);
 
   useEffect(() => {
     let mounted = true;
@@ -29,6 +37,9 @@ export const useDeviceBootstrap = () => {
     const bootstrap = async () => {
       setBootstrapState('pending');
       try {
+        setServerKey(serverIdentity.key);
+        await loadBinding();
+
         let persisted = await readDeviceId();
         if (!persisted) {
           persisted = uuidv4();
@@ -37,8 +48,6 @@ export const useDeviceBootstrap = () => {
         }
         if (!mounted) return;
         setDeviceId(persisted);
-
-        await loadStation();
 
         const metadataPayload = await collectDeviceMetadata();
         if (!mounted) return;
@@ -51,6 +60,9 @@ export const useDeviceBootstrap = () => {
         });
         markRegistration(new Date().toISOString());
 
+        const status = await getDeviceStatus(persisted);
+        await applyDeviceStatusSnapshot(status, serverIdentity.key);
+
         setBootstrapState('ready');
       } catch (error) {
         logError('Bootstrap failed', { message: (error as Error).message });
@@ -62,11 +74,11 @@ export const useDeviceBootstrap = () => {
     return () => {
       mounted = false;
     };
-  }, [loadStation, markRegistration, setBootstrapState, setDeviceId, setMetadata]);
+  }, [loadBinding, markRegistration, setBootstrapState, setDeviceId, setMetadata, setServerKey]);
 
   return {
     deviceId,
     metadata,
-    refreshStation: loadStation
+    refreshStation: loadBinding
   };
 };

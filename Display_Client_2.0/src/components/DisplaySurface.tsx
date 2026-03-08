@@ -9,13 +9,13 @@ interface Props {
 
 export const DisplaySurface = ({ reloadToken }: Props) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { deviceId, metadata, stationAssignment } = useDeviceStore();
+  const { deviceId, metadata, stationAssignment, displayPath } = useDeviceStore();
   const [isLoaded, setLoaded] = useState(false);
 
   const src = useMemo(() => {
     if (!deviceId) return undefined;
-    return buildDisplayUrl(deviceId, stationAssignment);
-  }, [deviceId, stationAssignment, reloadToken]);
+    return buildDisplayUrl({ deviceId, station: stationAssignment, displayPath });
+  }, [deviceId, stationAssignment, displayPath, reloadToken]);
 
   useEffect(() => {
     if (!deviceId || !metadata || !iframeRef.current) return;

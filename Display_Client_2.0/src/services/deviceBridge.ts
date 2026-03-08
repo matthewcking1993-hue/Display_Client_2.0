@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import type { DeviceMetadata } from '../types/device';
-import { appConfig } from '../config';
+import { appConfig, serverIdentity } from '../config';
 
 export const collectDeviceMetadata = async (): Promise<DeviceMetadata> => {
   if (window.kdsBridge?.device?.getMetadata) {
@@ -29,10 +29,40 @@ export const collectDeviceMetadata = async (): Promise<DeviceMetadata> => {
   };
 };
 
-export const buildDisplayUrl = (deviceId: string, station?: string | null) => {
+interface DisplayUrlOptions {
+  deviceId: string;
+  station?: string | null;
+  displayPath?: string | null;
+}
+
+const buildUrlFromPath = (path: string) => {
+  const origin = serverIdentity.origin || (appConfig.displayUrl ? new URL(appConfig.displayUrl).origin : '');
+  if (!origin) {
+    return null;
+  }
+  try {
+    return new URL(path, origin);
+  } catch {
+    return null;
+  }
+};
+
+export const buildDisplayUrl = ({ deviceId, station, displayPath }: DisplayUrlOptions) => {
+  if (displayPath) {
+    const target = buildUrlFromPath(displayPath);
+    if (target) {
+      target.searchParams.set('deviceId', deviceId);
+      if (station) {
+        target.searchParams.set('station', station);
+      }
+      return target.toString();
+    }
+  }
+
   if (!appConfig.displayUrl) {
     return `about:blank#deviceId=${deviceId}`;
   }
+
   const url = new URL(appConfig.displayUrl);
   url.searchParams.set('deviceId', deviceId);
   if (station) {

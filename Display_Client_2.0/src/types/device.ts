@@ -27,6 +27,37 @@ export interface DeviceStatus {
   stationAssignment?: string;
 }
 
+export interface LocationInfo {
+  id: string;
+  name: string;
+}
+
+export interface DeviceAssignmentSummary {
+  stationId: string;
+  stationName?: string | null;
+  assignedAt?: string | null;
+  assignedBy?: string | null;
+  displaySlug?: string | null;
+  deviceType?: string | null;
+}
+
+export interface DisplayDescriptor {
+  baseUrl: string;
+  path: string;
+  slug: string | null;
+  url: string;
+  stationId: string | null;
+}
+
+export interface DeviceStatusResponse {
+  deviceId: string;
+  registered: boolean;
+  location?: LocationInfo | null;
+  registration?: Record<string, unknown> | null;
+  assignment?: DeviceAssignmentSummary | null;
+  display?: DisplayDescriptor | null;
+}
+
 export interface LogEntry {
   level: 'info' | 'warn' | 'error';
   timestamp: string;

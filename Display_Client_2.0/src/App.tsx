@@ -4,6 +4,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { useDeviceBootstrap } from './hooks/useDeviceBootstrap';
 import { useHeartbeat } from './hooks/useHeartbeat';
 import { useKioskGuards } from './hooks/useKioskGuards';
+import { useAssignmentSync } from './hooks/useAssignmentSync';
 import { useNetworkWatchdog } from './hooks/useNetworkWatchdog';
 import { useWatchdogTimer } from './hooks/useWatchdogTimer';
 import { useDeviceStore } from './state/deviceStore';
@@ -16,6 +17,7 @@ const App = () => {
   useDeviceBootstrap();
   useHeartbeat();
   useKioskGuards();
+  useAssignmentSync();
   useWatchdogTimer();
   useNetworkWatchdog(() => {
     setReloadToken((value) => value + 1);
