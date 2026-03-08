@@ -31,15 +31,15 @@ export const AdminPanel = () => {
   }, [stationAssignment]);
 
   const diagnostics = useMemo(
-    () => [
-      { label: 'Device ID', value: deviceId ?? 'pending…' },
-      { label: 'Station', value: stationAssignment ?? 'Unassigned' },
-      { label: 'Last heartbeat', value: formatTime(lastHeartbeatAt) },
-      { label: 'Registered', value: formatTime(lastRegistrationAt) },
-      { label: 'App', value: metadata?.appVersion ?? 'n/a' },
-      { label: 'Platform', value: `${metadata?.platform ?? 'n/a'} ${metadata?.osVersion ?? ''}`.trim() }
-    ].concat(location ? [{ label: 'Kitchen', value: `${location.name} (${location.id})` }] : []);
-    ],
+    () =>
+      [
+        { label: 'Device ID', value: deviceId ?? 'pending…' },
+        { label: 'Station', value: stationAssignment ?? 'Unassigned' },
+        { label: 'Last heartbeat', value: formatTime(lastHeartbeatAt) },
+        { label: 'Registered', value: formatTime(lastRegistrationAt) },
+        { label: 'App', value: metadata?.appVersion ?? 'n/a' },
+        { label: 'Platform', value: `${metadata?.platform ?? 'n/a'} ${metadata?.osVersion ?? ''}`.trim() }
+      ].concat(location ? [{ label: 'Kitchen', value: `${location.name} (${location.id})` }] : []),
     [deviceId, stationAssignment, lastHeartbeatAt, lastRegistrationAt, location, metadata]
   );
 
