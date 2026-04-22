@@ -41,6 +41,15 @@ export interface DeviceAssignmentSummary {
   deviceType?: string | null;
 }
 
+export interface DeviceSessionSummary {
+  stationId: string;
+  deviceId: string;
+  status: string;
+  claimedAt?: string | null;
+  lastHeartbeat?: string | null;
+  releasedAt?: string | null;
+}
+
 export interface DisplayDescriptor {
   baseUrl: string;
   path: string;
@@ -56,6 +65,22 @@ export interface DeviceStatusResponse {
   registration?: Record<string, unknown> | null;
   assignment?: DeviceAssignmentSummary | null;
   display?: DisplayDescriptor | null;
+  session?: DeviceSessionSummary | null;
+}
+
+export interface StationAvailability {
+  stationId: string;
+  stationName: string;
+  displayType?: string;
+  isAvailable: boolean;
+  activeDeviceId?: string | null;
+  claimedAt?: string | null;
+  lastHeartbeat?: string | null;
+}
+
+export interface StationAvailabilityResponse {
+  total: number;
+  stations: StationAvailability[];
 }
 
 export interface LogEntry {

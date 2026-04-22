@@ -11,13 +11,14 @@ export const applyDeviceStatusSnapshot = async (
     return;
   }
 
-  const { setStation, setDisplayPath, setLocation } = useDeviceStore.getState();
+  const { setStation, setDisplayPath, setLocation, setSession } = useDeviceStore.getState();
   const nextStation = status.assignment?.stationId ?? null;
   const nextPath = status.display?.path ?? null;
 
   setLocation(status.location ?? null);
   setStation(nextStation);
   setDisplayPath(nextPath);
+  setSession(status.session ?? null);
 
   await writeServerBinding(serverKey, {
     stationId: nextStation,

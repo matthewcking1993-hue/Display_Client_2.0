@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { appConfig, serverIdentity } from '../config';
+import { appConfig, getActiveServerIdentity } from '../config';
 import { getDeviceStatus } from '../services/apiClient';
 import { applyDeviceStatusSnapshot } from '../services/assignmentCoordinator';
 import { logError } from '../services/logService';
@@ -16,7 +16,7 @@ export const useAssignmentSync = () => {
       try {
         const snapshot = await getDeviceStatus(deviceId);
         if (!cancelled) {
-          await applyDeviceStatusSnapshot(snapshot, serverKey ?? serverIdentity.key);
+          await applyDeviceStatusSnapshot(snapshot, serverKey ?? getActiveServerIdentity().key);
         }
       } catch (error) {
         logError('Assignment sync failed', { message: (error as Error).message });

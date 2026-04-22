@@ -3,11 +3,7 @@ import { buildDisplayUrl, listenForInfoRequests, pushDeviceInfoToFrame } from '.
 import { useDeviceStore } from '../state/deviceStore';
 import { logInfo } from '../services/logService';
 
-interface Props {
-  reloadToken: number;
-}
-
-export const DisplaySurface = ({ reloadToken }: Props) => {
+export const DisplaySurface = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { deviceId, metadata, stationAssignment, displayPath } = useDeviceStore();
   const [isLoaded, setLoaded] = useState(false);
@@ -15,7 +11,7 @@ export const DisplaySurface = ({ reloadToken }: Props) => {
   const src = useMemo(() => {
     if (!deviceId) return undefined;
     return buildDisplayUrl({ deviceId, station: stationAssignment, displayPath });
-  }, [deviceId, stationAssignment, displayPath, reloadToken]);
+  }, [deviceId, stationAssignment, displayPath]);
 
   useEffect(() => {
     if (!deviceId || !metadata || !iframeRef.current) return;
@@ -33,13 +29,12 @@ export const DisplaySurface = ({ reloadToken }: Props) => {
       clearTimeout(timer);
       remove();
     };
-  }, [deviceId, metadata, reloadToken]);
+  }, [deviceId, metadata]);
 
   return (
     <div className="display-surface">
       {src && (
         <iframe
-          key={reloadToken}
           ref={iframeRef}
           src={src}
           title="KDS Display"

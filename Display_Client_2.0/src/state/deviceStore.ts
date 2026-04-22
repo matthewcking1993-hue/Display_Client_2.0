@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { DeviceMetadata } from '../types/device';
+import type { DeviceMetadata, DeviceSessionSummary } from '../types/device';
 
 type BootstrapPhase = 'idle' | 'pending' | 'ready' | 'error';
 
@@ -14,6 +14,7 @@ interface DeviceState {
   displayPath: string | null;
   serverKey: string | null;
   location: { id: string; name: string } | null;
+  session: DeviceSessionSummary | null;
   setDeviceId: (deviceId: string) => void;
   setMetadata: (metadata: DeviceMetadata) => void;
   setStation: (station: string | null) => void;
@@ -24,6 +25,7 @@ interface DeviceState {
   setDisplayPath: (path: string | null) => void;
   setServerKey: (key: string | null) => void;
   setLocation: (info: { id: string; name: string } | null) => void;
+  setSession: (session: DeviceSessionSummary | null) => void;
 }
 
 export const useDeviceStore = create<DeviceState>((set) => ({
@@ -35,6 +37,7 @@ export const useDeviceStore = create<DeviceState>((set) => ({
   displayPath: null,
   serverKey: null,
   location: null,
+  session: null,
   setDeviceId: (deviceId) => set({ deviceId }),
   setMetadata: (metadata) => set({ metadata }),
   setStation: (stationAssignment) => set({ stationAssignment }),
@@ -44,5 +47,6 @@ export const useDeviceStore = create<DeviceState>((set) => ({
   setOnline: (isOnline) => set({ isOnline }),
   setDisplayPath: (displayPath) => set({ displayPath }),
   setServerKey: (serverKey) => set({ serverKey }),
-  setLocation: (location) => set({ location })
+  setLocation: (location) => set({ location }),
+  setSession: (session) => set({ session })
 }));

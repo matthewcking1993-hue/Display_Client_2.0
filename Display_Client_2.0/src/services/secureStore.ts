@@ -119,7 +119,14 @@ export const clearServerBinding = async (serverKey: string) => {
 
 export const readDeviceId = async (): Promise<string | null> => {
   if (window.kdsBridge?.storage?.readDeviceId) {
-    return window.kdsBridge.storage.readDeviceId();
+    try {
+      const bridgeValue = await window.kdsBridge.storage.readDeviceId();
+      if (bridgeValue) {
+        return bridgeValue;
+      }
+    } catch {
+      // Fall through to local persistence
+    }
   }
 
   if (isWeb()) {
@@ -132,8 +139,11 @@ export const readDeviceId = async (): Promise<string | null> => {
 
 export const writeDeviceId = async (deviceId: string) => {
   if (window.kdsBridge?.storage?.writeDeviceId) {
-    await window.kdsBridge.storage.writeDeviceId(deviceId);
-    return;
+    try {
+      await window.kdsBridge.storage.writeDeviceId(deviceId);
+    } catch {
+      // Continue and persist with local storage fallback
+    }
   }
 
   if (isWeb()) {

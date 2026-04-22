@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import type { DeviceMetadata } from '../types/device';
-import { appConfig, serverIdentity } from '../config';
+import { appConfig, getActiveServerIdentity } from '../config';
 
 export const collectDeviceMetadata = async (): Promise<DeviceMetadata> => {
   if (window.kdsBridge?.device?.getMetadata) {
@@ -36,7 +36,8 @@ interface DisplayUrlOptions {
 }
 
 const buildUrlFromPath = (path: string) => {
-  const origin = serverIdentity.origin || (appConfig.displayUrl ? new URL(appConfig.displayUrl).origin : '');
+  const identity = getActiveServerIdentity();
+  const origin = identity.origin || (appConfig.displayUrl ? new URL(appConfig.displayUrl).origin : '');
   if (!origin) {
     return null;
   }

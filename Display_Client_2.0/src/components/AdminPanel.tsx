@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { appConfig } from '../config';
+import { useMemo, useState } from 'react';
+import { appConfig, getActiveServerIdentity } from '../config';
 import { useDeviceStore } from '../state/deviceStore';
 import { useLogStore } from '../state/logStore';
-import { exportLogs, logInfo } from '../services/logService';
-import { writeStationAssignment } from '../services/secureStore';
-import { serverIdentity } from '../config';
+import { exportLogs, logError, logInfo } from '../services/logService';
+import { clearServerBinding } from '../services/secureStore';
+import { releaseStation } from '../services/apiClient';
 
 const formatTime = (iso?: string) => (iso ? new Date(iso).toLocaleString() : '—');
 
@@ -16,19 +16,16 @@ export const AdminPanel = () => {
     lastHeartbeatAt,
     lastRegistrationAt,
     setStation,
+    setSession,
     location,
-    serverKey
-  } =
-    useDeviceStore();
+    serverKey,
+    session
+  } = useDeviceStore();
+  const { logs } = useLogStore();
   const [pin, setPin] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
   const [isVisible, setVisible] = useState(false);
-  const [stationDraft, setStationDraft] = useState(stationAssignment ?? '');
-  const { logs } = useLogStore();
-
-  useEffect(() => {
-    setStationDraft(stationAssignment ?? '');
-  }, [stationAssignment]);
+  const [isReleasing, setReleasing] = useState(false);
 
   const diagnostics = useMemo(
     () =>
@@ -54,11 +51,20 @@ export const AdminPanel = () => {
     }
   };
 
-  const handleStationSave = async () => {
-    const sanitized = stationDraft.trim();
-    await writeStationAssignment(sanitized || null, serverKey ?? serverIdentity.key);
-    setStation(sanitized || null);
-    logInfo('Station updated', { value: sanitized || null });
+  const handleRelease = async () => {
+    if (!deviceId) return;
+    setReleasing(true);
+    try {
+      await releaseStation(deviceId, 'admin-release');
+      await clearServerBinding(serverKey ?? getActiveServerIdentity().key);
+      setStation(null);
+      setSession(null);
+      logInfo('Station released via admin panel');
+    } catch (error) {
+      logError('Station release failed', { message: (error as Error).message });
+    } finally {
+      setReleasing(false);
+    }
   };
 
   if (!isVisible) {
@@ -109,8 +115,18 @@ export const AdminPanel = () => {
 
       <section>
         <h3>Station Assignment</h3>
-        <input value={stationDraft} onChange={(event) => setStationDraft(event.target.value)} />
-        <button onClick={handleStationSave}>Save</button>
+        <p>{stationAssignment ?? 'Unassigned'}</p>
+        <p className="station-hint">
+          Use the on-screen selector to claim a station. Release here to free this device so another display can claim it.
+        </p>
+        <button onClick={handleRelease} disabled={!stationAssignment || isReleasing}>
+          {isReleasing ? 'Releasing…' : 'Release Station'}
+        </button>
+        {session && (
+          <p className="station-hint">
+            Session {session.status} • Claimed {session.claimedAt ? new Date(session.claimedAt).toLocaleString() : 'recently'}
+          </p>
+        )}
       </section>
 
       <section>
