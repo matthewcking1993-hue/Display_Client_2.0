@@ -20,6 +20,14 @@ const normalizeAndroidLocalhost = (value: string) => {
 export const appConfig = {
   displayUrl: normalizeAndroidLocalhost(import.meta.env.VITE_DISPLAY_URL ?? ''),
   apiBaseUrl: normalizeAndroidLocalhost(import.meta.env.VITE_API_BASE_URL ?? ''),
+  bootstrapUrl: normalizeAndroidLocalhost(import.meta.env.VITE_BOOTSTRAP_URL ?? ''),
+  discoveryOrigins: (import.meta.env.VITE_DISCOVERY_ORIGINS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean),
+  bootstrapResolvePath: import.meta.env.VITE_BOOTSTRAP_RESOLVE_PATH ?? '/api/bootstrap/resolve',
+  bootstrapPingPath: import.meta.env.VITE_BOOTSTRAP_PING_PATH ?? '/api/bootstrap/ping',
+  bootstrapTimeoutMs: Number(import.meta.env.VITE_BOOTSTRAP_TIMEOUT_MS ?? 3500),
   heartbeatIntervalMs: Number(import.meta.env.VITE_HEARTBEAT_INTERVAL_MS ?? 15000),
   adminPin: import.meta.env.VITE_ADMIN_PIN ?? '2468',
   stationHint: import.meta.env.VITE_STATION_HINT ?? ''

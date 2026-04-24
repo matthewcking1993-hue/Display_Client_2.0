@@ -83,6 +83,34 @@ export interface StationAvailabilityResponse {
   stations: StationAvailability[];
 }
 
+export interface BootstrapServerDescriptor {
+  origin: string;
+  apiBaseUrl: string;
+  displayBaseUrl: string;
+  remotePort: number;
+  devicePort: number;
+}
+
+export interface BootstrapResolveResponse {
+  discoveredAt: string;
+  leaseTtlSeconds: number;
+  location?: LocationInfo | null;
+  server: BootstrapServerDescriptor;
+  stationAvailability?: StationAvailabilityResponse;
+  device?: {
+    deviceId: string;
+    registration?: Record<string, unknown> | null;
+    assignment?: Record<string, unknown> | null;
+  };
+}
+
+export interface BootstrapResolveRequest {
+  deviceId: string;
+  metadata: DeviceMetadata;
+  stationHint?: string;
+  currentOrigin?: string;
+}
+
 export interface LogEntry {
   level: 'info' | 'warn' | 'error';
   timestamp: string;

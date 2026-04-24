@@ -9,18 +9,71 @@ import { useAssignmentSync } from './hooks/useAssignmentSync';
 import { useNetworkWatchdog } from './hooks/useNetworkWatchdog';
 import { useWatchdogTimer } from './hooks/useWatchdogTimer';
 import { useDeviceStore } from './state/deviceStore';
-import { logInfo } from './services/logService';
+import { logError, logInfo } from './services/logService';
+import { appConfig, setRuntimeServerOrigin } from './config';
+import { discoverBootstrapServer } from './services/bootstrapDiscovery';
+import { getDeviceStatus, registerDevice, setApiBaseUrl } from './services/apiClient';
+import { applyDeviceStatusSnapshot } from './services/assignmentCoordinator';
 
 const App = () => {
-  const { bootstrapState, isOnline } = useDeviceStore();
+  const {
+    bootstrapState,
+    isOnline,
+    deviceId,
+    metadata,
+    markRegistration,
+    setServerKey,
+    setBootstrapState,
+  } = useDeviceStore();
 
   useDeviceBootstrap();
   useHeartbeat();
   useKioskGuards();
   useAssignmentSync();
   useWatchdogTimer();
-  useNetworkWatchdog(() => {
-    logInfo('Network reconnected - keeping active display session');
+  useNetworkWatchdog(async () => {
+    logInfo('Network reconnected - attempting bootstrap resolution');
+
+    if (!deviceId || !metadata) {
+      return;
+    }
+
+    try {
+      const resolved = await discoverBootstrapServer({
+        deviceId,
+        metadata,
+        stationHint: appConfig.stationHint,
+      });
+
+      if (!resolved?.server?.origin) {
+        logInfo('Network reconnected - no bootstrap resolution change');
+        return;
+      }
+
+      const identity = setRuntimeServerOrigin(resolved.server.origin);
+      setApiBaseUrl(appConfig.apiBaseUrl);
+      setServerKey(identity.key);
+
+      await registerDevice({
+        deviceId,
+        metadata,
+        stationHint: appConfig.stationHint,
+      });
+      markRegistration(new Date().toISOString());
+
+      const snapshot = await getDeviceStatus(deviceId);
+      await applyDeviceStatusSnapshot(snapshot, identity.key);
+      setBootstrapState('ready');
+
+      logInfo('Network reconnect bootstrap succeeded', {
+        origin: resolved.server.origin,
+        locationId: resolved.location?.id,
+      });
+    } catch (error) {
+      logError('Network reconnect bootstrap failed', {
+        message: (error as Error).message,
+      });
+    }
   });
 
   const status = useMemo(() => {

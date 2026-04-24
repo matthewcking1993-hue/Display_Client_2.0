@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
 import { useDeviceStore } from '../state/deviceStore';
-import { logInfo, logWarn } from '../services/logService';
+import { logError, logInfo, logWarn } from '../services/logService';
 
-export const useNetworkWatchdog = (onReconnect?: () => void) => {
+export const useNetworkWatchdog = (onReconnect?: () => void | Promise<void>) => {
   const { setOnline } = useDeviceStore();
 
   useEffect(() => {
@@ -19,7 +19,11 @@ export const useNetworkWatchdog = (onReconnect?: () => void) => {
       if (connected) {
         logInfo('Network restored', { type: connectionType });
         if (transitionedToOnline) {
-          onReconnect?.();
+          Promise.resolve(onReconnect?.()).catch((error) => {
+            logError('Reconnect callback failed', {
+              message: (error as Error).message,
+            });
+          });
         }
       } else {
         logWarn('Network lost', { type: connectionType });
