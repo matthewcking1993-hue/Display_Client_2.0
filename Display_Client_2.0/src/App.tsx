@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { DisplaySurface } from './components/DisplaySurface';
 import { AdminPanel } from './components/AdminPanel';
 import { StationAssignmentModal } from './components/StationAssignmentModal';
@@ -14,6 +14,8 @@ import { appConfig, setRuntimeServerOrigin } from './config';
 import { discoverBootstrapServer } from './services/bootstrapDiscovery';
 import { getDeviceStatus, registerDevice, setApiBaseUrl } from './services/apiClient';
 import { applyDeviceStatusSnapshot } from './services/assignmentCoordinator';
+import { releaseStation } from './services/apiClient';
+import { clearServerBinding } from './services/secureStore';
 
 const App = () => {
   const {
@@ -21,6 +23,7 @@ const App = () => {
     isOnline,
     deviceId,
     metadata,
+    serverKey,
     markRegistration,
     setServerKey,
     setBootstrapState,
@@ -86,6 +89,32 @@ const App = () => {
         return null;
     }
   }, [bootstrapState]);
+
+  useEffect(() => {
+    const cleanup = async () => {
+      if (!serverKey) {
+        return;
+      }
+
+      await clearServerBinding(serverKey);
+      if (deviceId) {
+        await releaseStation(deviceId, 'app-session-ended');
+      }
+    };
+
+    const handleUnload = () => {
+      cleanup().catch((error) => {
+        logError('Failed to dispose assignment on close', {
+          message: (error as Error).message,
+        });
+      });
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, [deviceId, serverKey]);
 
   return (
     <div className="app-shell">

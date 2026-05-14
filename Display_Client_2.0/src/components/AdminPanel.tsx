@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { appConfig, getActiveServerIdentity } from '../config';
 import { useDeviceStore } from '../state/deviceStore';
 import { useLogStore } from '../state/logStore';
@@ -26,6 +26,8 @@ export const AdminPanel = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isVisible, setVisible] = useState(false);
   const [isReleasing, setReleasing] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const pinInputRef = useRef<HTMLInputElement>(null);
 
   const diagnostics = useMemo(
     () =>
@@ -51,6 +53,32 @@ export const AdminPanel = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isModalVisible) {
+      setKeyboardOffset(0);
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      return;
+    }
+
+    const updateOffset = () => {
+      const keyboardHeight = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      setKeyboardOffset(Math.min(220, Math.max(0, keyboardHeight)));
+    };
+
+    updateOffset();
+    viewport.addEventListener('resize', updateOffset);
+    viewport.addEventListener('scroll', updateOffset);
+
+    return () => {
+      viewport.removeEventListener('resize', updateOffset);
+      viewport.removeEventListener('scroll', updateOffset);
+    };
+  }, [isModalVisible]);
+
   const handleRelease = async () => {
     if (!deviceId) return;
     setReleasing(true);
@@ -73,14 +101,20 @@ export const AdminPanel = () => {
         <button className="admin-pin" onClick={() => setModalVisible(true)} aria-label="Admin login" />
         {isModalVisible && (
           <div className="admin-modal">
-            <div className="admin-card">
+            <div className="admin-card" style={{ transform: keyboardOffset ? `translateY(-${keyboardOffset}px)` : undefined }}>
               <h2>Admin PIN</h2>
               <input
+                ref={pinInputRef}
                 autoFocus
                 type="password"
                 value={pin}
                 onChange={(event) => setPin(event.target.value)}
                 onKeyDown={(event) => event.key === 'Enter' && unlock()}
+                onFocus={() => {
+                  setTimeout(() => {
+                    pinInputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                  }, 60);
+                }}
               />
               <button onClick={unlock}>Unlock</button>
               <button

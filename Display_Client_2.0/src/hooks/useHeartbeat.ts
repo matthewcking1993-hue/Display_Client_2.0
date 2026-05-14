@@ -5,7 +5,7 @@ import { appConfig } from '../config';
 import { logError, logInfo } from '../services/logService';
 
 export const useHeartbeat = () => {
-  const { deviceId, metadata, markHeartbeat, setStation, setSession } = useDeviceStore();
+  const { deviceId, metadata, markHeartbeat, setStation, setSession, setOnline } = useDeviceStore();
 
   useEffect(() => {
     if (!deviceId || !metadata) return;
@@ -14,6 +14,7 @@ export const useHeartbeat = () => {
       try {
         const payload = await sendHeartbeat(deviceId, metadata);
         const timestamp = new Date().toISOString();
+        setOnline(true);
         markHeartbeat(timestamp);
         logInfo('Heartbeat sent', { timestamp });
         if (payload?.session) {
@@ -26,10 +27,11 @@ export const useHeartbeat = () => {
           setStation(null);
         }
       } catch (error) {
+        setOnline(false);
         logError('Heartbeat failed', { message: (error as Error).message });
       }
     }, appConfig.heartbeatIntervalMs);
 
     return () => clearInterval(interval);
-  }, [deviceId, markHeartbeat, metadata, setSession, setStation]);
+  }, [deviceId, markHeartbeat, metadata, setOnline, setSession, setStation]);
 };
