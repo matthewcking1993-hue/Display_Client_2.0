@@ -27,6 +27,10 @@ A cross-platform kiosk wrapper built with Capacitor + React that loads an existi
      ```env
      VITE_DISPLAY_URL=https://your-display.example.com
      VITE_API_BASE_URL=https://api.example.com
+       VITE_BOOTSTRAP_URL=https://bootstrap.example.com
+       VITE_DISCOVERY_ORIGINS=https://store-gateway.local:32768,https://store-gateway.local:3000
+       VITE_BOOTSTRAP_RESOLVE_PATH=/api/bootstrap/resolve
+       VITE_BOOTSTRAP_TIMEOUT_MS=3500
      VITE_HEARTBEAT_INTERVAL_MS=15000
      VITE_STATION_HINT=drive-thru
      VITE_ADMIN_PIN=2468
@@ -52,15 +56,20 @@ CI helper scripts live in `scripts/ci-*` and simply wrap the commands with signi
 1. **Bootstrap**
    - Reads secure storage for an existing UUID; if missing, generates a v4 UUID and saves it per platform.
    - Collects metadata from Capacitor Device APIs (model, OS, orientation, touch support) or Electron main process.
+   - Resolves a reachable local KDS host via `/api/bootstrap/resolve` using ordered bootstrap candidates (`VITE_BOOTSTRAP_URL`, active origin, and `VITE_DISCOVERY_ORIGINS`).
    - POSTs to `/api/devices/register` with `{ deviceId, metadata, stationHint }`.
 2. **Display embedding**
    - Loads `VITE_DISPLAY_URL` inside an iframe, appending `deviceId` and `station` query params.
    - Sends `{ deviceId, metadata }` to the iframe via `postMessage` repeatedly and whenever the page requests it with `kds/request-device-info`.
    - Electron additionally injects an `X-KDS-Device-ID` header for all requests to the display host.
-3. **Heartbeat + watchdog**
+3. **Dynamic station locking**
+   - Each device registers against `/api/devices` and fetches a status snapshot that includes the kitchen `locationId`, latest assignment, and the slugged `/display/{station}--{token}` path.
+   - Slugs are cached per server origin so the next boot immediately loads the station-specific URL; moving the device to a new host shows the "Awaiting Assignment" page until the admin assigns it.
+   - Background sync keeps polling for assignment changes and updates the cached slug + station automatically.
+4. **Heartbeat + watchdog**
    - Sends `/api/devices/heartbeat` on `VITE_HEARTBEAT_INTERVAL_MS`.
-   - Network watcher triggers reloads when connectivity returns; watchdog forces reload when heartbeats fall behind >3 intervals.
-4. **Admin panel**
+   - Network watcher triggers bootstrap re-resolution when connectivity returns; watchdog forces reload when heartbeats fall behind >3 intervals.
+5. **Admin panel**
    - Tap/click the floating dot (top-right) → enter PIN (`VITE_ADMIN_PIN`).
    - Review UUID, station, heartbeat timestamps, change station assignment, export logs, or close the panel.
 
@@ -85,6 +94,7 @@ CI helper scripts live in `scripts/ci-*` and simply wrap the commands with signi
 ## Development Tips
 
 - Update `.env` before running `npm run sync` so that both Capacitor and Electron builds embed the right display URL.
+- Prefer setting `VITE_BOOTSTRAP_URL` to a globally reachable bootstrap endpoint; use `VITE_DISCOVERY_ORIGINS` for site-local fallback candidates.
 - To customize kiosk styling or admin UI, edit the CSS in `src/styles/global.css`.
 - When packaging for production, ensure network policies (firewall/allowlist) permit outbound access for both `VITE_DISPLAY_URL` and `VITE_API_BASE_URL`.
 

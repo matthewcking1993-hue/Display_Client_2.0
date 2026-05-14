@@ -1,5 +1,11 @@
 import type { DeviceMetadata } from './device';
 
+interface NativeServerBinding {
+  stationId?: string | null;
+  displayPath?: string | null;
+  locationId?: string | null;
+}
+
 declare global {
   const __APP_VERSION__: string;
 
@@ -8,6 +14,8 @@ declare global {
     writeDeviceId(deviceId: string): Promise<void>;
     readStationAssignment(): Promise<string | null>;
     writeStationAssignment(station: string | null): Promise<void>;
+    readServerBinding?(serverKey: string): Promise<NativeServerBinding | null>;
+    writeServerBinding?(serverKey: string, binding: NativeServerBinding): Promise<void>;
   }
 
   interface NativeBridgeDevice {

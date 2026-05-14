@@ -5,22 +5,33 @@ import { appConfig } from '../config';
 import { logError, logInfo } from '../services/logService';
 
 export const useHeartbeat = () => {
-  const { deviceId, metadata, markHeartbeat } = useDeviceStore();
+  const { deviceId, metadata, markHeartbeat, setStation, setSession, setOnline } = useDeviceStore();
 
   useEffect(() => {
     if (!deviceId || !metadata) return;
 
     const interval = setInterval(async () => {
       try {
-        await sendHeartbeat(deviceId, metadata);
+        const payload = await sendHeartbeat(deviceId, metadata);
         const timestamp = new Date().toISOString();
+        setOnline(true);
         markHeartbeat(timestamp);
         logInfo('Heartbeat sent', { timestamp });
+        if (payload?.session) {
+          setSession(payload.session);
+          if (payload.stationId) {
+            setStation(payload.stationId);
+          }
+        } else if (payload?.requiresAssignment) {
+          setSession(null);
+          setStation(null);
+        }
       } catch (error) {
+        setOnline(false);
         logError('Heartbeat failed', { message: (error as Error).message });
       }
     }, appConfig.heartbeatIntervalMs);
 
     return () => clearInterval(interval);
-  }, [deviceId, markHeartbeat, metadata]);
+  }, [deviceId, markHeartbeat, metadata, setOnline, setSession, setStation]);
 };
